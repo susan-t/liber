@@ -1,4 +1,4 @@
-# book-finder
+# Liber
 Final Project for Object Oriented Programming 
 
 ## Team Members: 
