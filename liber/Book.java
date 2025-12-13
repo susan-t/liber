@@ -11,7 +11,7 @@ public class Book {
     private String location;
     private int book_id;
 
-    public Book(String title, String author, boolean availability, String genre, String desc, String cond, String location, int book_id) {
+    public Book(String title, String author, boolean availability, String genre, String desc, String cond, String location) {
         this.title = title;
         this.author = author;
         this.availability = availability; 
@@ -19,7 +19,7 @@ public class Book {
         this.desc = desc;
         this.cond = cond;
         this.location = location;
-        this.book_id = book_id;
+        //this.book_id = book_id;
     }
 
     public String getAuthor() {
