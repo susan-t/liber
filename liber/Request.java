@@ -1,10 +1,12 @@
+package liber;
+
 public class Request{
     //attributes:
     private String borrower;
     private String lender;
     private String status;
     private Boolean approval;
-    private String rating;
+    private int rating;
 
     //constructor:
     Request(String borrower,String lender){
@@ -12,7 +14,7 @@ public class Request{
         this.lender = lender;
         this.status = "Pending Approval";
         this.approval = null;
-        this.rating = null;
+        this.rating = 0;
     }
 
 
@@ -20,12 +22,8 @@ public class Request{
         this.approval = b;
     }
 
-
-
-
     public void setStatus(String s){
         this.status = s;
-        }
     }
 
     public void rate(int r){

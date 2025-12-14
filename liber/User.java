@@ -4,7 +4,8 @@ import java.util.List;
 public class User {
     
     private String name;
-    private String rating; 
+    private String rating;
+    private int totalRating; 
     private List<Book> user_collection;
     private List<Book> books_borrowed;
     private List<Book> books_loaned;
@@ -15,6 +16,7 @@ public class User {
         this.name = name;
         this.rating = "3.0";
         this.loan_max = false;
+        this.totalRating = 0;
     }
 
     public void setUserId(int user_id) {
