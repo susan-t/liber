@@ -1,4 +1,6 @@
 package liber;
+import java.awt.Color;
+
 
 public class Book {
 
@@ -10,6 +12,7 @@ public class Book {
     private String cond;
     private String location;
     private int book_id;
+    private Color rowColor;
 
     public Book(String title, String author, boolean availability, String genre, String desc, String cond, String location) {
         this.title = title;
@@ -83,5 +86,13 @@ public class Book {
     }
     public int getBookId(){
         return book_id;
+    }
+
+    public void setRowColor(Color color) {
+        this.rowColor = color;
+    }
+
+    public Color getRowColor() {
+        return this.rowColor;
     }
 }
