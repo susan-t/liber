@@ -16,6 +16,8 @@ public class Book {
     private User owner;
     private User borrower;
 
+    private boolean awaitingRating = false;
+
     public Book(String title, String author, boolean availability, String genre, String desc, String cond, String location, User owner) {
         this.title = title;
         this.author = author;
@@ -57,19 +59,19 @@ public class Book {
     public Color getRowColor() { return rowColor; }
     public void setRowColor(Color color) { this.rowColor = color; }
 
-    public boolean isLoaned() {
-        return borrower != null;
-    }
+    public boolean isLoaned() { return borrower != null; }
 
-    public User getBorrower() {
-        return borrower;
-    }
+    public User getBorrower() { return borrower; }
 
-    public void loanTo(User user) {
-        this.borrower = user;
-    }
+    public void loanTo(User user) { this.borrower = user; }
 
-    public void returnBook() {
-        this.borrower = null;
-    }
+    public void returnBook() { this.borrower = null; }
+
+    public void setBorrower(User user) { this.borrower = user; }
+
+    public void setLoaned(boolean b) { this.availability = !b; }
+
+    public boolean isAwaitingRating() { return awaitingRating; }
+
+    public void setAwaitingRating(boolean awaitingRating) { this.awaitingRating = awaitingRating; }
 }

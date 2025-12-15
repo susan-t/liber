@@ -2,33 +2,32 @@ package liber;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public class RequestStore {
 
-    private static final List<Request> requests = new ArrayList<>();
+    private static final List<Request> allRequests = new ArrayList<>();
 
-    public static void addRequest(Request req) {
-        requests.add(req);
+    public static void addRequest(Request request) {
+        if (request != null) allRequests.add(request);
     }
 
-    public static void removeRequest(Request req) {
-        requests.remove(req);
+    public static void removeRequest(Request request) {
+        allRequests.remove(request);
     }
 
-    public static List<Request> getRequestsFor(User user) {
-        return requests.stream()
-                .filter(r -> r.getLender() != null && r.getLender().equals(user))
-                .collect(Collectors.toList());
+    public static List<Request> getRequestsFor(User lender) {
+        List<Request> result = new ArrayList<>();
+        for (Request r : allRequests) {
+            if (r.getLender().equals(lender)) result.add(r);
+        }
+        return result;
     }
 
-    public static List<Request> getRequestsByBorrower(User user) {
-        return requests.stream()
-                .filter(r -> r.getRequester() != null && r.getRequester().equals(user))
-                .collect(Collectors.toList());
-    }
-
-    public static List<Request> getAllRequests() {
-        return new ArrayList<>(requests);
+    public static List<Request> getRequestsByBorrower(User borrower) {
+        List<Request> result = new ArrayList<>();
+        for (Request r : allRequests) {
+            if (r.getBorrower().equals(borrower)) result.add(r);
+        }
+        return result;
     }
 }

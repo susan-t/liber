@@ -6,22 +6,10 @@ import java.awt.*;
 
 public class MyBooks_GUI extends JFrame {
 
-    private JButton home_btn;
-    private JButton mybooks_btn;
-    private JButton logout_btn;
-    private JButton addbook_btn;
-    private JButton request_box;
+    private JButton home_btn, mybooks_btn, logout_btn, addbook_btn, request_box;
+    private JLabel mybooks_title, requests_label;
 
-    private JLabel mybooks_title;
-    private JLabel loaned_label;
-    private JLabel borrowed_label;
-    private JLabel mycollection_label;
-    private JLabel requests_label;
-
-    private JPanel myCollectionPanel;
-    private JPanel loanedPanel;
-    private JPanel borrowedPanel;
-
+    private JPanel myCollectionPanel, loanedPanel, borrowedPanel;
     private User currentUser;
 
     public MyBooks_GUI(User currentUser) {
@@ -38,11 +26,9 @@ public class MyBooks_GUI extends JFrame {
         home_btn = new JButton("Home");
         mybooks_btn = new JButton("My Books");
         logout_btn = new JButton("Logout");
-
         topBar.add(home_btn);
         topBar.add(mybooks_btn);
         topBar.add(logout_btn);
-
         add(topBar, BorderLayout.NORTH);
 
         JPanel centerPanel = new JPanel(new BorderLayout(20, 20));
@@ -54,43 +40,29 @@ public class MyBooks_GUI extends JFrame {
 
         JPanel contentPanel = new JPanel(new GridLayout(1, 2, 30, 0));
 
-        JPanel leftColumn = new JPanel(new GridLayout(2, 1, 0, 20));
-
         loanedPanel = new JPanel();
         loanedPanel.setLayout(new BoxLayout(loanedPanel, BoxLayout.Y_AXIS));
-        loanedPanel.setBorder(new LineBorder(Color.GRAY));
-        loaned_label = new JLabel("Loaned");
-        loanedPanel.add(loaned_label, BorderLayout.NORTH);
 
         borrowedPanel = new JPanel();
         borrowedPanel.setLayout(new BoxLayout(borrowedPanel, BoxLayout.Y_AXIS));
-        borrowedPanel.setBorder(new LineBorder(Color.GRAY));
-        borrowed_label = new JLabel("Borrowed");
-        borrowedPanel.add(borrowed_label, BorderLayout.NORTH);
 
-        leftColumn.add(loanedPanel);
-        leftColumn.add(borrowedPanel);
+        JPanel loanedSection = createSectionPanel("Loaned", loanedPanel, null);
+        JPanel borrowedSection = createSectionPanel("Borrowed", borrowedPanel, null);
 
-        JPanel rightColumn = new JPanel(new BorderLayout());
-        rightColumn.setBorder(new LineBorder(Color.GRAY));
+        JPanel leftColumn = new JPanel(new GridLayout(2, 1, 0, 20));
+        leftColumn.add(loanedSection);
+        leftColumn.add(borrowedSection);
 
-        JPanel collectionHeader = new JPanel(new BorderLayout());
-        mycollection_label = new JLabel("My Collection");
         addbook_btn = new JButton("+");
-        collectionHeader.add(mycollection_label, BorderLayout.WEST);
-        collectionHeader.add(addbook_btn, BorderLayout.EAST);
-
+        addbook_btn.setMargin(new Insets(2, 8, 2, 8));
         myCollectionPanel = new JPanel();
         myCollectionPanel.setLayout(new BoxLayout(myCollectionPanel, BoxLayout.Y_AXIS));
-
-        JScrollPane scrollPane = new JScrollPane(myCollectionPanel);
-        rightColumn.add(collectionHeader, BorderLayout.NORTH);
-        rightColumn.add(scrollPane, BorderLayout.CENTER);
+        JPanel myCollectionSection = createSectionPanel("My Collection", myCollectionPanel, addbook_btn);
 
         contentPanel.add(leftColumn);
-        contentPanel.add(rightColumn);
-
+        contentPanel.add(myCollectionSection);
         centerPanel.add(contentPanel, BorderLayout.CENTER);
+
         add(centerPanel, BorderLayout.CENTER);
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
@@ -99,9 +71,11 @@ public class MyBooks_GUI extends JFrame {
 
         requests_label = new JLabel("Requests:");
         request_box = new JButton("View");
-        bottomPanel.add(requests_label, BorderLayout.WEST);
-        bottomPanel.add(request_box, BorderLayout.EAST);
-
+        JPanel requestGroup = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 15));
+        requestGroup.setOpaque(false);
+        requestGroup.add(requests_label);
+        requestGroup.add(request_box);
+        bottomPanel.add(requestGroup, BorderLayout.EAST);
         add(bottomPanel, BorderLayout.SOUTH);
 
         home_btn.addActionListener(e -> go_to_home());
@@ -113,14 +87,35 @@ public class MyBooks_GUI extends JFrame {
         });
 
         refreshCollectionUI();
-
         setLocationRelativeTo(null);
         setVisible(true);
     }
 
+    private JPanel createSectionPanel(String title, JPanel contentPanel, JButton headerButton) {
+        JPanel container = new JPanel(new BorderLayout());
+        container.setBorder(new LineBorder(Color.GRAY));
+
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(new Color(220, 220, 220));
+        headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+
+        JLabel header = new JLabel(title, SwingConstants.CENTER);
+        header.setFont(new Font("Arial", Font.BOLD, 14));
+        headerPanel.add(header, BorderLayout.CENTER);
+
+        if (headerButton != null) headerPanel.add(headerButton, BorderLayout.EAST);
+
+        JScrollPane scroll = new JScrollPane(contentPanel);
+        scroll.setBorder(null);
+
+        container.add(headerPanel, BorderLayout.NORTH);
+        container.add(scroll, BorderLayout.CENTER);
+        return container;
+    }
+
     public void go_to_requests() {
-        new Requests_GUI(currentUser, this); 
-        this.setVisible(false);
+        new Requests_GUI(currentUser, this);
+        setVisible(false);
     }
 
     public void add_new_book() {
@@ -132,11 +127,38 @@ public class MyBooks_GUI extends JFrame {
         dispose();
     }
 
-    private JPanel createRow(String text) {
+    public void refreshCollectionUI() {
+        myCollectionPanel.removeAll();
+        loanedPanel.removeAll();
+        borrowedPanel.removeAll();
+
+        for (Book book : currentUser.getCollection()) {
+            myCollectionPanel.add(createRow(book.getTitle() + " by " +
+                    (book.getAuthor() == null || book.getAuthor().isBlank() ? "Unknown author" : book.getAuthor()),
+                    book.getRowColor()));
+        }
+
+        for (Book book : currentUser.getCollection()) {
+            if (book.isLoaned() || book.isAwaitingRating()) {
+                loanedPanel.add(createLoanedRow(book));
+            }
+        }
+
+        for (Book book : BookStore.getAllBooks()) {
+            if (book.getBorrower() == currentUser) {
+                borrowedPanel.add(createBorrowedRow(book));
+            }
+        }
+
+        revalidate();
+        repaint();
+    }
+
+    private JPanel createRow(String text, Color bg) {
         JPanel row = new JPanel(new BorderLayout());
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
         row.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
-        row.setBackground(Color.LIGHT_GRAY);
+        row.setBackground(bg != null ? bg : Color.LIGHT_GRAY);
 
         JLabel label = new JLabel(text, SwingConstants.CENTER);
         label.setFont(new Font("Arial", Font.PLAIN, 14));
@@ -144,49 +166,77 @@ public class MyBooks_GUI extends JFrame {
         return row;
     }
 
-    public void refreshCollectionUI() {
-        myCollectionPanel.removeAll();
-        loanedPanel.removeAll();
-        borrowedPanel.removeAll();
+    private JPanel createBorrowedRow(Book book) {
+        JPanel row = new JPanel(new BorderLayout());
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        row.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+        row.setBackground(book.getRowColor() != null ? book.getRowColor() : Color.LIGHT_GRAY);
 
-        for (Book book : currentUser.getCollection()) {
-            JPanel row = new JPanel(new BorderLayout());
-            row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
-            row.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+        JLabel label = new JLabel(book.getTitle() + " (from " + book.getOwner().getName() + ")");
+        label.setFont(new Font("Arial", Font.PLAIN, 14));
 
-            Color rowColor = book.getRowColor() != null ? book.getRowColor() : Color.LIGHT_GRAY;
-            row.setBackground(rowColor);
+        JButton returnBtn = new JButton("Return");
+        returnBtn.addActionListener(e -> returnBook(book));
 
-            String author = book.getAuthor();
-            if (author == null || author.isBlank()) author = "Unknown author";
+        row.add(label, BorderLayout.CENTER);
+        row.add(returnBtn, BorderLayout.EAST);
+        return row;
+    }
 
-            JLabel label = new JLabel(book.getTitle() + " by " + author, SwingConstants.CENTER);
-            label.setFont(new Font("Arial", Font.PLAIN, 14));
-            row.add(label, BorderLayout.CENTER);
+    private JPanel createLoanedRow(Book book) {
+        JPanel row = new JPanel(new BorderLayout());
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        row.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+        row.setBackground(book.getRowColor() != null ? book.getRowColor() : Color.LIGHT_GRAY);
 
-            myCollectionPanel.add(row);
+        String labelText = book.getBorrower() != null
+                ? book.getTitle() + " → " + book.getBorrower().getName()
+                : book.getTitle() + " → Returned";
+
+        JLabel label = new JLabel(labelText);
+        label.setFont(new Font("Arial", Font.PLAIN, 14));
+        row.add(label, BorderLayout.CENTER);
+
+        if (book.isAwaitingRating()) {
+            JButton rateBtn = new JButton("Rate Borrower");
+            rateBtn.addActionListener(e -> rateBorrower(book));
+            row.add(rateBtn, BorderLayout.EAST);
         }
 
-        for (Book book : currentUser.getCollection()) {
-            if (book.isLoaned() && book.getBorrower() != null) {
-                loanedPanel.add(createRow(
-                        book.getTitle() + " → " + book.getBorrower().getName()
-                ));
-            }
+        return row;
+    }
+
+    private void returnBook(Book book) {
+        book.setBorrower(null);          
+        book.setAwaitingRating(true);    
+
+        JOptionPane.showMessageDialog(this, "Book returned. You can rate the borrower now.");
+        refreshCollectionUI();
+    }
+
+    private void rateBorrower(Book book) {
+        String ratingStr = JOptionPane.showInputDialog(
+                this,
+                "Rate the borrower (1-5):",
+                "Rate Borrower",
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        int rating = 0;
+        try {
+            rating = Integer.parseInt(ratingStr);
+            if (rating < 1 || rating > 5) rating = 0;
+        } catch (NumberFormatException ignored) {}
+
+        if (rating > 0) {
+            System.out.println("Borrower rated: " + rating);
         }
 
-        for (Book book : BookStore.getAllBooks()) {
-            if (book.getBorrower() == currentUser) {
-                borrowedPanel.add(createRow(
-                        book.getTitle() + " (from " + book.getOwner().getName() + ")"
-                ));
-            }
-        }
-        myCollectionPanel.revalidate();
-        myCollectionPanel.repaint();
-        loanedPanel.revalidate();
-        loanedPanel.repaint();
-        borrowedPanel.revalidate();
-        borrowedPanel.repaint();
+        book.setLoaned(false);
+        book.setAwaitingRating(false);
+        book.setBorrower(null);
+
+        JOptionPane.showMessageDialog(this, "Book returned to your collection!");
+        go_to_home();
     }
 }

@@ -52,5 +52,12 @@ public class User {
     }
 
     public List<Book> getCollection() { return user_collection; }
+
+    public void addRating(int rating2) {
+        totalRating += rating2;
+        int numberOfRatings = Math.max(1, totalRating / 5);
+        double average = (double) totalRating / numberOfRatings;
+        this.rating = String.format("%.1f", average);
+    }
 }
 
