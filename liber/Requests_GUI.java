@@ -4,13 +4,19 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.List;
 
 public class Requests_GUI extends JFrame {
 
     private JButton home_btn;
     private JButton my_books_btn;
+    private User currentUser;
+    private MyBooks_GUI myBooksGUI;
 
-    public Requests_GUI() {
+    public Requests_GUI(User currentUser, MyBooks_GUI myBooksGUI) {
+        this.currentUser = currentUser;
+        this.myBooksGUI = myBooksGUI;
+
         setTitle("Requests");
         setSize(900, 600);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -24,52 +30,28 @@ public class Requests_GUI extends JFrame {
 
         topBar.add(home_btn);
         topBar.add(my_books_btn);
-
         add(topBar, BorderLayout.NORTH);
 
-        JPanel content = new JPanel(new BorderLayout());
-        add(content, BorderLayout.CENTER);
+        JTabbedPane tabs = new JTabbedPane();
 
-        JPanel header = new JPanel(new BorderLayout());
-        header.setBorder(BorderFactory.createEmptyBorder(15, 30, 15, 30));
-        header.setBackground(Color.WHITE);
+        JPanel lenderPanel = createLenderPanel();
+        JPanel borrowerPanel = createBorrowerPanel();
 
-        JButton backBtn = new JButton("←");
-        backBtn.setBorderPainted(false);
-        backBtn.setFocusPainted(false);
-        backBtn.setContentAreaFilled(false);
-        backBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        tabs.add("Received Requests", lenderPanel);
+        tabs.add("Sent Requests", borrowerPanel);
 
-        JLabel title = new JLabel("Request");
-        title.setFont(new Font("Arial", Font.BOLD, 28));
-
-        header.add(backBtn, BorderLayout.WEST);
-        header.add(title, BorderLayout.CENTER);
-
-        content.add(header, BorderLayout.NORTH);
-
-        JPanel listPanel = new JPanel();
-        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
-        listPanel.setBackground(Color.WHITE);
-
-        listPanel.add(createRequestRow("#18A720", "Request to Borrow", ""));
-        listPanel.add(createRequestRow("#ABCHSF", "Request for", "Approved"));
-
-        JScrollPane scrollPane = new JScrollPane(listPanel);
-        scrollPane.setBorder(null);
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-
-        content.add(scrollPane, BorderLayout.CENTER);
-
-        backBtn.addActionListener(e -> dispose());
+        add(tabs, BorderLayout.CENTER);
 
         home_btn.addActionListener(e -> {
-            new Home_GUI();
+            new Home_GUI(currentUser);
             dispose();
         });
 
         my_books_btn.addActionListener(e -> {
-            new MyBooks_GUI();
+            if (myBooksGUI != null) {
+                myBooksGUI.setVisible(true);
+                myBooksGUI.refreshCollectionUI();
+            }
             dispose();
         });
 
@@ -77,7 +59,51 @@ public class Requests_GUI extends JFrame {
         setVisible(true);
     }
 
-    private JPanel createRequestRow(String id, String text, String status) {
+    private JPanel createLenderPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+
+        JPanel listPanel = new JPanel();
+        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+        listPanel.setBackground(Color.WHITE);
+
+        List<Request> requests = RequestStore.getRequestsFor(currentUser);
+        for (Request req : requests) {
+            if (req != null && req.getRequester() != null) {
+                listPanel.add(createRequestRow(req));
+            }
+        }
+
+        JScrollPane scrollPane = new JScrollPane(listPanel);
+        scrollPane.setBorder(null);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    private JPanel createBorrowerPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+
+        JPanel listPanel = new JPanel();
+        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+        listPanel.setBackground(Color.WHITE);
+
+        List<Request> requests = RequestStore.getRequestsByBorrower(currentUser); 
+        for (Request req : requests) {
+            if (req != null && req.getLender() != null && req.getBook() != null) {
+                listPanel.add(createBorrowerRow(req));
+            }
+        }
+
+        JScrollPane scrollPane = new JScrollPane(listPanel);
+        scrollPane.setBorder(null);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+    private JPanel createRequestRow(Request req) {
         JPanel row = new JPanel(new BorderLayout(20, 0));
         row.setPreferredSize(new Dimension(0, 55));
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 55));
@@ -85,45 +111,99 @@ public class Requests_GUI extends JFrame {
         row.setBackground(new Color(230, 230, 230));
         row.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        JLabel idLabel = new JLabel(id);
-        JLabel textLabel = new JLabel(text + " _______________________");
-        JLabel statusLabel = new JLabel(status);
+        User requester = req.getRequester();
+        String borrowerName = (requester != null) ? requester.getName() : "Unknown";
 
+        JLabel borrowerLabel = new JLabel("Borrower: " + borrowerName);
+        JLabel bookLabel = new JLabel(req.getBook() != null ? req.getBook().getTitle() : "Unknown Book");
+        JLabel statusLabel = new JLabel(req.getStatus() != null ? req.getStatus() : "Pending");
         statusLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        statusLabel.setForeground(new Color(0, 130, 0));
 
-        row.add(idLabel, BorderLayout.WEST);
-        row.add(textLabel, BorderLayout.CENTER);
+        if (req.getApproval() != null) {
+            statusLabel.setForeground(req.getApproval() ? new Color(0, 130, 0) : Color.RED);
+        }
+
+        row.add(borrowerLabel, BorderLayout.WEST);
+        row.add(bookLabel, BorderLayout.CENTER);
         row.add(statusLabel, BorderLayout.EAST);
 
         row.addMouseListener(new MouseAdapter() {
             Color base = row.getBackground();
 
             @Override
-            public void mouseEntered(MouseEvent e) {
-                row.setBackground(new Color(210, 210, 210));
-            }
-
+            public void mouseEntered(MouseEvent e) { row.setBackground(new Color(210, 210, 210)); }
             @Override
-            public void mouseExited(MouseEvent e) {
-                row.setBackground(base);
-            }
+            public void mouseExited(MouseEvent e) { row.setBackground(base); }
 
             @Override
             public void mouseClicked(MouseEvent e) {
-                JOptionPane.showMessageDialog(
-                        Requests_GUI.this,
-                        "Clicked request " + id,
-                        "Request Selected",
-                        JOptionPane.INFORMATION_MESSAGE
-                );
+                if (req.getLender().equals(currentUser) && req.getApproval() == null) {
+                    int choice = JOptionPane.showConfirmDialog(
+                            Requests_GUI.this,
+                            "Approve request from " + borrowerName + "?",
+                            "Approve/Decline",
+                            JOptionPane.YES_NO_OPTION
+                    );
+
+                    if (choice == JOptionPane.YES_OPTION) {
+                        req.setApproval(true);
+                        req.setStatus("Approved");
+                        approveRequest(req);
+                    } else {
+                        req.setApproval(false);
+                        req.setStatus("Declined");
+                        refresh();
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(
+                            Requests_GUI.this,
+                            "Request status: " + req.getStatus(),
+                            "Info",
+                            JOptionPane.INFORMATION_MESSAGE
+                    );
+                }
             }
         });
 
         return row;
     }
 
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(Requests_GUI::new);
+    private JPanel createBorrowerRow(Request req) {
+        JPanel row = new JPanel(new BorderLayout(20, 0));
+        row.setPreferredSize(new Dimension(0, 50));
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+        row.setBorder(BorderFactory.createEmptyBorder(10, 30, 10, 30));
+        row.setBackground(new Color(245, 245, 245));
+
+        String bookTitle = req.getBook() != null ? req.getBook().getTitle() : "Unknown Book";
+        String lenderName = (req.getLender() != null) ? req.getLender().getName() : "Unknown";
+        String status = req.getStatus() != null ? req.getStatus() : "Pending";
+
+        JLabel infoLabel = new JLabel(bookTitle + " → " + lenderName + " [" + status + "]");
+        infoLabel.setFont(new Font("Arial", Font.PLAIN, 14));
+
+        row.add(infoLabel, BorderLayout.CENTER);
+
+        return row;
+    }
+
+    private void approveRequest(Request request) {
+        Book book = request.getBook();
+        User borrower = request.getRequester();
+
+        if (book != null && borrower != null) {
+            book.loanTo(borrower);
+            RequestStore.removeRequest(request);
+
+            if (myBooksGUI != null) {
+                myBooksGUI.refreshCollectionUI();
+            }
+        }
+        refresh();
+    }
+
+    private void refresh() {
+        dispose();
+        new Requests_GUI(currentUser, myBooksGUI);
     }
 }

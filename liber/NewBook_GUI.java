@@ -6,16 +6,15 @@ import java.util.Random;
 
 public class NewBook_GUI extends JFrame {
 
-    private JTextField nameField;
-    private JTextField authorField;
-    private JTextField descField;
-    private JComboBox<String> genreBox;
-    private JComboBox<String> conditionBox;
-    private JComboBox<String> locationBox;
+    private JTextField nameField, authorField, descField;
+    private JComboBox<String> genreBox, conditionBox, locationBox;
     private MyBooks_GUI parent;
+    private User currentUser;
 
-    public NewBook_GUI(MyBooks_GUI parent) {
+    public NewBook_GUI(MyBooks_GUI parent, User currentUser) {
         this.parent = parent;
+        this.currentUser = currentUser;
+
         setTitle("New Book");
         setSize(600, 420);
         setLayout(new BorderLayout());
@@ -29,14 +28,13 @@ public class NewBook_GUI extends JFrame {
         title.setFont(new Font("Verdana", Font.BOLD, 26));
         mainPanel.add(title, BorderLayout.NORTH);
 
-        // Form
         JPanel formPanel = new JPanel(new GridLayout(6, 2, 10, 15));
         nameField = new JTextField();
         authorField = new JTextField();
         descField = new JTextField();
-        genreBox = new JComboBox<>(new String[]{"Fiction", "Non-Fiction", "Fantasy", "Sci-Fi", "Romance"});
-        conditionBox = new JComboBox<>(new String[]{"Fair", "Good", "Great"});
-        locationBox = new JComboBox<>(new String[]{"Shelf", "Living Room", "Bedroom"});
+        genreBox = new JComboBox<>(new String[]{"Fiction","Non-Fiction","Fantasy","Sci-Fi","Romance"});
+        conditionBox = new JComboBox<>(new String[]{"Fair","Good","Great"});
+        locationBox = new JComboBox<>(new String[]{"Shelf","Living Room","Bedroom"});
 
         formPanel.add(new JLabel("Title:")); formPanel.add(nameField);
         formPanel.add(new JLabel("Author:")); formPanel.add(authorField);
@@ -54,10 +52,9 @@ public class NewBook_GUI extends JFrame {
         addBtn.addActionListener(e -> addBook());
         buttonPanel.add(cancelBtn);
         buttonPanel.add(addBtn);
-
         mainPanel.add(buttonPanel, BorderLayout.SOUTH);
-        add(mainPanel);
 
+        add(mainPanel);
         setLocationRelativeTo(null);
         setVisible(true);
     }
@@ -70,18 +67,22 @@ public class NewBook_GUI extends JFrame {
             genreBox.getSelectedItem().toString(),
             descField.getText(),
             conditionBox.getSelectedItem().toString(),
-            locationBox.getSelectedItem().toString()
+            locationBox.getSelectedItem().toString(),
+            currentUser
         );
 
-        // Random pastel color
         Random rand = new Random();
-        float r = 0.5f + rand.nextFloat() * 0.5f;
-        float g = 0.5f + rand.nextFloat() * 0.5f;
-        float b = 0.5f + rand.nextFloat() * 0.5f;
-        book.setRowColor(new Color(r, g, b));
+        book.setRowColor(new Color(
+            0.5f + rand.nextFloat()*0.5f,
+            0.5f + rand.nextFloat()*0.5f,
+            0.5f + rand.nextFloat()*0.5f
+        ));
 
+        currentUser.getCollection().add(book);
         BookStore.addBook(book);
+
         parent.refreshCollectionUI();
         dispose();
     }
+
 }

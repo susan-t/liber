@@ -11,8 +11,12 @@ public class Home_GUI extends JFrame {
     private JLabel liber_title;
     private JTextField search_bar;
     private JPanel display_books;
+    private User currentUser;
+    private JButton logout_btn;
 
-    public Home_GUI() {
+    public Home_GUI(User currentUser) {
+        this.currentUser = currentUser;
+
         setTitle("Liber");
         setSize(900, 600);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -23,9 +27,10 @@ public class Home_GUI extends JFrame {
 
         home_btn = new JButton("Home");
         my_books_btn = new JButton("My Books");
-
+        logout_btn = new JButton("Logout");
         topBar.add(home_btn);
         topBar.add(my_books_btn);
+        topBar.add(logout_btn);
         add(topBar, BorderLayout.NORTH);
 
         JPanel mainPanel = new JPanel(new BorderLayout());
@@ -41,7 +46,6 @@ public class Home_GUI extends JFrame {
 
         search_bar = new JTextField();
         search_bar.setMaximumSize(new Dimension(300, 30));
-
         JButton search_btn = new JButton("Search");
         search_btn.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -57,15 +61,16 @@ public class Home_GUI extends JFrame {
         display_books.setLayout(new BoxLayout(display_books, BoxLayout.Y_AXIS));
         display_books.setBorder(BorderFactory.createEmptyBorder(10, 40, 10, 40));
 
-        loadBooks();
-
         JScrollPane scrollPane = new JScrollPane(display_books);
         scrollPane.setBorder(null);
         mainPanel.add(scrollPane, BorderLayout.CENTER);
 
+        loadBooks();
+
         home_btn.addActionListener(e -> refresh());
         my_books_btn.addActionListener(e -> go_to_myBook());
         search_btn.addActionListener(e -> search(search_bar.getText()));
+        logout_btn.addActionListener(e -> logout());
 
         setLocationRelativeTo(null);
         setVisible(true);
@@ -87,19 +92,16 @@ public class Home_GUI extends JFrame {
         row.setBackground(book.getRowColor());
 
         String author = book.getAuthor();
-        if (author == null || author.isBlank()) {
-            author = "Unknown author";
-        }
+        if (author == null || author.isBlank()) { author = "Unknown author"; }
 
         JLabel titleLabel = new JLabel(book.getTitle() + " by " + author, SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.PLAIN, 16));
         titleLabel.setOpaque(false);
-
         row.add(titleLabel, BorderLayout.CENTER);
 
         row.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                view_book(book.getTitle());
+                view_book(book);
             }
         });
 
@@ -108,32 +110,47 @@ public class Home_GUI extends JFrame {
 
     private void loadBooks() {
         display_books.removeAll();
-
-        for (Book book : BookStore.getBooks()) {
+        for (Book book : BookStore.getAvailableBooks(currentUser)) {
             display_books.add(createBookRow(book));
         }
-
         display_books.revalidate();
         display_books.repaint();
     }
 
-    public void go_to_myBook() {
-        new MyBooks_GUI();
+    private void logout() {
+        new Login_GUI();
         dispose();
     }
 
-    public void view_book(String title) {
-        JOptionPane.showMessageDialog(this, "Viewing book: " + title);
+
+    public void go_to_myBook() {
+        new MyBooks_GUI(currentUser);
+        dispose();
     }
+
+    public void view_book(Book book) {
+    if (book.getOwner() == currentUser) {
+        JOptionPane.showMessageDialog(this, "You own this book.");
+    } else {
+        int result = JOptionPane.showConfirmDialog(this,
+                "Request this book from " + book.getOwner().getName() + "?",
+                "Request Book", JOptionPane.YES_NO_OPTION);
+        if (result == JOptionPane.YES_OPTION) {
+            Request req = new Request(currentUser, book.getOwner(), book); // Pass User objects
+            RequestStore.addRequest(req);
+            JOptionPane.showMessageDialog(this, "Request sent to " + book.getOwner().getName());
+        }
+    }
+}
+
 
     public void search(String query) {
         display_books.removeAll();
-
         if (query == null || query.isBlank()) {
-            loadBooks(); // show all books
+            loadBooks();
         } else {
             String searchLower = query.toLowerCase();
-            for (Book book : BookStore.getBooks()) {
+            for (Book book : BookStore.getAvailableBooks(currentUser)) {
                 if (book.getTitle().toLowerCase().contains(searchLower)) {
                     display_books.add(createBookRow(book));
                 }
@@ -144,11 +161,7 @@ public class Home_GUI extends JFrame {
     }
 
     public void refresh() {
-        new Home_GUI();
+        new Home_GUI(currentUser);
         dispose();
-    }
-
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(Home_GUI::new);
     }
 }
