@@ -22,3 +22,19 @@ As someone who is borrowing a book:
 3. See and click on the book created from the other user
 4. You can request it and the request will be sent back to the Lender
 
+As someone who is lending out a book:
+1. Log in with the original user name
+2. Go to 'My Books' and click on 'View'
+3. Accept/Decline the Request
+4. Log Out
+
+As someone who is borrowing a book: 
+1. Log In as the second user
+2. Go to 'My Books" and return the book when needed
+3. Log Out
+
+As someone who is lending out a book:
+1. Log In as first user 
+2. Go to 'My Books" and return the book when needed
+3. Rate the User
+
